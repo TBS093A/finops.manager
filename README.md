@@ -7,6 +7,15 @@ gospodarstwa na siebie, z synchronizacją **P2P bez serwera** (Veilid, ten sam
 stos co [p2p.communicator](https://github.com/TBS093A/p2p.communicator)).
 Dołączenie do wspólnego planu odbywa się przez zeskanowanie kodu QR.
 
+**Pobierz APK:** [najnowsze wydanie](https://github.com/TBS093A/finops.manager/releases/latest)
+(arm64, Android 7+).
+
+| Plan | Prognoza | Wydatki | Dochód | Zaproszenie |
+|---|---|---|---|---|
+| ![Plan](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/02_plan.png) | ![Prognoza](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/03_plan_charts.png) | ![Wydatki](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/05_expenses.png) | ![Dochód](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/07_income.png) | ![QR](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/09_invite_qr.png) |
+
+Screenshoty robi CI na emulatorze (`integration_test/app_test.dart`).
+
 ## Co liczy
 
 **Dochód (zakładka Dochód)**: stawka godzinowa × 8 h × dni robocze (albo

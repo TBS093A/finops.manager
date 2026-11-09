@@ -115,7 +115,7 @@ class AmountRow extends StatelessWidget {
               ],
             ),
           ),
-          Text(zl(negative ? -amount : amount), style: style),
+          Text(zl(negative && amount != 0 ? -amount : amount), style: style),
         ],
       ),
     );
