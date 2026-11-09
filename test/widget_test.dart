@@ -1,0 +1,83 @@
+import 'package:finops_manager/app.dart';
+import 'package:finops_manager/data/store.dart';
+import 'package:finops_manager/domain/models.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  Future<Store> pumpApp(WidgetTester t, {MemberData? me}) async {
+    t.view.physicalSize = const Size(1080, 2400);
+    t.view.devicePixelRatio = 2.6;
+    addTearDown(t.view.reset);
+    final store = Store.memory(me ?? MemberData(memberId: 'me'));
+    store.selected.add(store.me.memberId);
+    await t.pumpWidget(FinOpsApp(store: store));
+    await t.pumpAndSettle();
+    return store;
+  }
+
+  testWidgets('first run: setup with the starter template', (t) async {
+    final store = await pumpApp(t);
+    expect(find.text('Zaczynamy'), findsOneWidget);
+    await t.enterText(find.byKey(const Key('setup-name')), 'Anna');
+    await t.tap(find.byKey(const Key('setup-done')));
+    await t.pumpAndSettle();
+
+    expect(store.me.name, 'Anna');
+    expect(store.me.expenses.every((e) => e.amount == 0), isTrue);
+    expect(store.me.expenses, isNotEmpty);
+    expect(find.text('Bilans miesiąca'), findsOneWidget);
+    expect(find.text('Przychód netto (faktura)'), findsOneWidget);
+    expect(find.textContaining('ZUS'), findsWidgets);
+  });
+
+  testWidgets('add a one-off expense from the Wydatki tab', (t) async {
+    final store = await pumpApp(
+      t,
+      me: MemberData(memberId: 'me', name: 'A'),
+    );
+    await t.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Wydatki'),
+      ),
+    );
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('expense-add')));
+    await t.pumpAndSettle();
+    await t.enterText(find.byKey(const Key('expense-name')), 'rower');
+    await t.enterText(find.byKey(const Key('expense-amount')), '1399,50');
+    await t.tap(find.text('Raz'));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('expense-save')));
+    await t.pumpAndSettle();
+
+    final e = store.me.expenses.single;
+    expect(e.name, 'rower');
+    expect(e.amount, 1399.5);
+    expect(e.repeat, Repeat.once);
+    expect(e.start, isNotNull);
+    expect(find.text('rower'), findsOneWidget);
+  });
+
+  testWidgets('income and household screens render', (t) async {
+    await pumpApp(
+      t,
+      me: MemberData(memberId: 'me', name: 'A'),
+    );
+    Finder nav(String s) =>
+        find.descendant(of: find.byType(NavigationBar), matching: find.text(s));
+    await t.tap(nav('Dochód'));
+    await t.pumpAndSettle();
+    expect(find.text('Mój dochód'), findsOneWidget);
+    await t.drag(
+      find.text('Działalność (B2B, ryczałt)'),
+      const Offset(0, -1200),
+    );
+    await t.pumpAndSettle();
+    expect(find.text('Dni robocze i korekty'), findsOneWidget);
+    await t.tap(nav('Wspólne'));
+    await t.pumpAndSettle();
+    expect(find.text('Załóż gospodarstwo'), findsOneWidget);
+  });
+}

@@ -1,0 +1,159 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:veilid/veilid.dart';
+
+import 'veilid_node.dart';
+
+/// Small conveniences over the Veilid routing context.
+class Dht {
+  Dht._();
+
+  static VeilidRoutingContext get rc => VeilidNode.instance.routing;
+
+  /// Runs [op], retrying the errors Veilid documents as retryable. Bounded:
+  /// at most [attempts] tries and a few seconds of waiting in between.
+  static Future<T> retry<T>(
+    Future<T> Function() op, {
+    int attempts = 3,
+    String what = 'dht op',
+  }) async {
+    for (var i = 1; ; i++) {
+      final sw = Stopwatch()..start();
+      try {
+        final r = await op();
+        _log('$what ok in ${sw.elapsedMilliseconds} ms (try $i)');
+        return r;
+      } on VeilidAPIExceptionTryAgain catch (e) {
+        _log('$what try-again after ${sw.elapsedMilliseconds} ms: $e');
+        if (i >= attempts) rethrow;
+      } on VeilidAPIExceptionTimeout catch (e) {
+        _log('$what timeout after ${sw.elapsedMilliseconds} ms: $e');
+        if (i >= attempts) rethrow;
+      } on VeilidAPIExceptionNoConnection catch (e) {
+        _log('$what no-connection after ${sw.elapsedMilliseconds} ms: $e');
+        if (i >= attempts) rethrow;
+      }
+      await Future<void>.delayed(Duration(seconds: 2 * i));
+    }
+  }
+
+  static Future<Uint8List?> get(
+    RecordKey key,
+    int subkey, {
+    bool refresh = true,
+  }) async {
+    final v = await retry(
+      () => rc.getDHTValue(key, subkey, forceRefresh: refresh),
+      what: 'get ${_short(key)}#$subkey',
+    );
+    if (v == null || v.data.isEmpty) return null;
+    return v.data;
+  }
+
+  static Future<Map<String, dynamic>?> getJson(
+    RecordKey key,
+    int subkey, {
+    bool refresh = true,
+  }) async {
+    final data = await get(key, subkey, refresh: refresh);
+    if (data == null) return null;
+    try {
+      return jsonDecode(utf8.decode(data)) as Map<String, dynamic>;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// Writes a subkey. Returns null when our value stands, or the value the
+  /// network holds instead (someone else won the write).
+  static Future<Uint8List?> set(
+    RecordKey key,
+    int subkey,
+    Uint8List data,
+  ) async {
+    final newer = await retry(
+      () => rc.setDHTValue(key, subkey, data),
+      what: 'set ${_short(key)}#$subkey (${data.length} B)',
+    );
+    return newer?.data;
+  }
+
+  static Future<void> setJson(
+    RecordKey key,
+    int subkey,
+    Map<String, dynamic> json,
+  ) => set(key, subkey, Uint8List.fromList(utf8.encode(jsonEncode(json))));
+
+  /// Local-first write for records only we write to (fresh rooms, our own
+  /// outbox): Veilid stores the value locally at once and pushes it to the
+  /// network itself, so wait at most [budget] for the push and let it finish
+  /// in the background.
+  static Future<void> setJsonSoon(
+    RecordKey key,
+    int subkey,
+    Map<String, dynamic> json, {
+    Duration budget = const Duration(seconds: 8),
+  }) => setSoon(
+    key,
+    subkey,
+    Uint8List.fromList(utf8.encode(jsonEncode(json))),
+    budget: budget,
+  );
+
+  static Future<void> setSoon(
+    RecordKey key,
+    int subkey,
+    Uint8List data, {
+    Duration budget = const Duration(seconds: 8),
+  }) async {
+    final write = set(key, subkey, data);
+    try {
+      await write.timeout(budget);
+    } on TimeoutException {
+      _log('set ${_short(key)}#$subkey continues in background');
+      unawaited(
+        write.then<void>(
+          (_) {},
+          onError: (Object e) =>
+              _log('background set ${_short(key)}#$subkey: $e'),
+        ),
+      );
+    }
+  }
+
+  static Future<void> close(RecordKey key) async {
+    try {
+      await rc.closeDHTRecord(key);
+    } on VeilidAPIException {
+      // Already closed or never opened.
+    }
+  }
+
+  /// Runs [count] jobs with at most [parallel] in flight.
+  static Future<void> pool(
+    int count,
+    int parallel,
+    Future<void> Function(int i) job,
+  ) async {
+    var next = 0;
+    Future<void> worker() async {
+      while (next < count) {
+        final i = next++;
+        await job(i);
+      }
+    }
+
+    await Future.wait(List.generate(parallel, (_) => worker()));
+  }
+
+  /// Short, non-secret record label for logs: the start of the opaque key
+  /// only, never the encryption secret.
+  static String _short(RecordKey key) {
+    final s = key.opaque.value.toString();
+    return s.length > 8 ? s.substring(0, 8) : s;
+  }
+
+  static void _log(String msg) => debugPrint('[dht] $msg');
+}
