@@ -432,9 +432,7 @@ class _MonthsCard extends StatelessWidget {
       extraNet: parseAmount(extra.text) ?? 0,
       note: note.text.trim(),
     );
-    for (final c in [days, off, extra, note]) {
-      c.dispose();
-    }
+    disposeAfterClose([days, off, extra, note]);
     if (ok != true) return;
     store.update((m) {
       if (value.isEmpty) {

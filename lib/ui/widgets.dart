@@ -14,6 +14,17 @@ final _moneyShort = NumberFormat.compactCurrency(
   decimalDigits: 1,
 );
 
+/// Disposes the controllers of a dialog or bottom sheet once its closing
+/// animation is over: the route still rebuilds its fields while it animates
+/// out, after `showDialog` has already returned.
+void disposeAfterClose(List<ChangeNotifier> controllers) {
+  Future<void>.delayed(const Duration(seconds: 1), () {
+    for (final c in controllers) {
+      c.dispose();
+    }
+  });
+}
+
 String zl(double v) => _money.format(v);
 String zlShort(double v) => _moneyShort.format(v).trim();
 String pct(double v) => '${(v * 100).toStringAsFixed(1)}%';

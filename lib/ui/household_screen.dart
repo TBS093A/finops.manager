@@ -9,6 +9,7 @@ import '../data/store.dart';
 import '../sync/household_sync.dart';
 import '../sync/invite.dart';
 import '../sync/veilid_node.dart';
+import 'widgets.dart';
 
 /// Shared planning: a household of participants syncing over Veilid (P2P,
 /// no server). Joining = scanning the QR shown on a member's phone.
@@ -63,7 +64,7 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
         ],
       ),
     );
-    c.dispose();
+    disposeAfterClose([c]);
     if (name == null || name.isEmpty) return;
     await _run(
       () => store.createHousehold(name),
@@ -346,7 +347,7 @@ class _ScanScreenState extends State<ScanScreen> {
         ],
       ),
     );
-    c.dispose();
+    disposeAfterClose([c]);
     if (raw == null || !mounted) return;
     if (HouseholdInvite.tryParse(raw) == null) {
       ScaffoldMessenger.of(context).showSnackBar(

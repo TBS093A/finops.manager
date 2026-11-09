@@ -41,6 +41,7 @@ class _LogScreenState extends State<LogScreen> {
       floatingActionButton: budgets.isEmpty
           ? null
           : FloatingActionButton(
+              heroTag: null,
               key: const Key('spend-add'),
               tooltip: 'Dodaj wydatek do dziennika',
               onPressed: () => _edit(budgets),
@@ -214,8 +215,7 @@ class _LogScreenState extends State<LogScreen> {
     );
     final value = parseAmount(amount.text);
     final label = name.text.trim();
-    name.dispose();
-    amount.dispose();
+    disposeAfterClose([name, amount]);
     if (result == 'delete' && existing != null) {
       store.update(
         (me) => me.spendings.removeWhere((s) => s.id == existing.id),

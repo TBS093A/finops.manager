@@ -54,6 +54,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             ),
           ),
           floatingActionButton: FloatingActionButton(
+            // Every tab of the shell stays built (IndexedStack): no shared
+            // default hero tag between their buttons.
+            heroTag: null,
             key: const Key('expense-add'),
             tooltip: 'Dodaj wydatek',
             onPressed: () =>

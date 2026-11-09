@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app.dart';
 import '../data/store.dart';
 import '../domain/models.dart';
+import 'widgets.dart';
 
 const _palette = <int>[
   0xFFE53935,
@@ -31,6 +32,7 @@ class CategoriesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Kategorie')),
       floatingActionButton: FloatingActionButton(
+        heroTag: null,
         tooltip: 'Nowa kategoria',
         onPressed: () => _edit(context, null),
         child: const Icon(Icons.add),
@@ -139,7 +141,7 @@ class CategoriesScreen extends StatelessWidget {
       ),
     );
     final label = name.text.trim();
-    name.dispose();
+    disposeAfterClose([name]);
     if (result == 'delete' && c != null) {
       store.update((me) => me.categories.removeWhere((x) => x.id == c.id));
       return;

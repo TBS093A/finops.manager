@@ -1,5 +1,6 @@
 import 'package:finops_manager/app.dart';
 import 'package:finops_manager/data/store.dart';
+import 'package:finops_manager/domain/calendar.dart';
 import 'package:finops_manager/domain/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -58,6 +59,43 @@ void main() {
     expect(e.repeat, Repeat.once);
     expect(e.start, isNotNull);
     expect(find.text('rower'), findsOneWidget);
+  });
+
+  testWidgets('spending log entry, then a new expense (two FABs)', (t) async {
+    final store = await pumpApp(
+      t,
+      me: MemberData(
+        memberId: 'me',
+        name: 'A',
+        expenses: [
+          Expense(
+            id: 'food',
+            name: 'jedzenie',
+            amount: 2000,
+            categoryId: 'codzienne',
+            start: YearMonth.now(),
+            budget: true,
+          ),
+        ],
+      ),
+    );
+    Finder nav(String s) =>
+        find.descendant(of: find.byType(NavigationBar), matching: find.text(s));
+    await t.tap(nav('Dziennik'));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('spend-add')));
+    await t.pumpAndSettle();
+    await t.enterText(find.byKey(const Key('spend-amount')), '123,45');
+    await t.enterText(find.byKey(const Key('spend-name')), 'sklep');
+    await t.tap(find.byKey(const Key('spend-save')));
+    await t.pumpAndSettle();
+    expect(store.me.spendings.single.amount, 123.45);
+
+    await t.tap(nav('Wydatki'));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('expense-add')));
+    await t.pumpAndSettle();
+    expect(find.text('Nowy wydatek'), findsOneWidget);
   });
 
   testWidgets('income and household screens render', (t) async {
