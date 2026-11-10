@@ -93,6 +93,7 @@ class Expense {
     this.dayOfMonth,
     this.spreadMonths = 1,
     this.budget = false,
+    this.vatRate = 0,
     this.note = '',
   });
 
@@ -110,7 +111,21 @@ class Expense {
   final bool budget;
   final String note;
 
+  /// A business cost on a VAT invoice: [amount] is gross and the VAT in it
+  /// (at this rate) is deducted from the VAT to pay. 0 = no input VAT.
+  final double vatRate;
+
   bool get isWish => start == null;
+
+  /// Input VAT this expense brings in [ym]. One-off purchases are deducted
+  /// in the month they are bought, even when saved up for over months.
+  double inputVatIn(YearMonth ym) {
+    if (vatRate <= 0 || budget) return 0;
+    final gross = repeat == Repeat.once
+        ? (ym == start ? amount : 0.0)
+        : amountIn(ym);
+    return round2(gross * vatRate / (1 + vatRate));
+  }
 
   /// How much this expense takes out of [ym].
   double amountIn(YearMonth ym) {
@@ -154,6 +169,7 @@ class Expense {
     int? Function()? dayOfMonth,
     int? spreadMonths,
     bool? budget,
+    double? vatRate,
     String? note,
   }) => Expense(
     id: id,
@@ -166,6 +182,7 @@ class Expense {
     dayOfMonth: dayOfMonth != null ? dayOfMonth() : this.dayOfMonth,
     spreadMonths: spreadMonths ?? this.spreadMonths,
     budget: budget ?? this.budget,
+    vatRate: vatRate ?? this.vatRate,
     note: note ?? this.note,
   );
 
@@ -180,6 +197,7 @@ class Expense {
     if (dayOfMonth != null) 'day': dayOfMonth,
     if (spreadMonths != 1) 'spread': spreadMonths,
     if (budget) 'budget': true,
+    if (vatRate > 0) 'vatRate': vatRate,
     if (note.isNotEmpty) 'note': note,
   };
 
@@ -194,6 +212,7 @@ class Expense {
     dayOfMonth: (j['day'] as num?)?.toInt(),
     spreadMonths: (j['spread'] as num?)?.toInt() ?? 1,
     budget: j['budget'] as bool? ?? false,
+    vatRate: _d(j['vatRate']),
     note: j['note'] as String? ?? '',
   );
 }
@@ -301,6 +320,7 @@ class MonthOverride {
     this.workDays,
     this.daysOff = 0,
     this.extraNet = 0,
+    this.inputVat = 0,
     this.note = '',
   });
 
@@ -312,15 +332,24 @@ class MonthOverride {
 
   /// Extra invoiced amount (net), taxed like the rest.
   final double extraNet;
+
+  /// Extra input VAT to deduct this month (one-off business invoices not
+  /// planned as expenses, corrections, surplus from the previous period).
+  final double inputVat;
   final String note;
 
   bool get isEmpty =>
-      workDays == null && daysOff == 0 && extraNet == 0 && note.isEmpty;
+      workDays == null &&
+      daysOff == 0 &&
+      extraNet == 0 &&
+      inputVat == 0 &&
+      note.isEmpty;
 
   Map<String, dynamic> toJson() => {
     if (workDays != null) 'workDays': workDays,
     if (daysOff != 0) 'daysOff': daysOff,
     if (extraNet != 0) 'extraNet': extraNet,
+    if (inputVat != 0) 'inputVat': inputVat,
     if (note.isNotEmpty) 'note': note,
   };
 
@@ -328,6 +357,7 @@ class MonthOverride {
     workDays: (j['workDays'] as num?)?.toInt(),
     daysOff: (j['daysOff'] as num?)?.toInt() ?? 0,
     extraNet: _d(j['extraNet']),
+    inputVat: _d(j['inputVat']),
     note: j['note'] as String? ?? '',
   );
 }

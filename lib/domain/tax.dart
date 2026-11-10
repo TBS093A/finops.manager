@@ -164,6 +164,7 @@ class MonthTax {
     required this.healthTier,
     required this.pitBase,
     required this.pit,
+    this.inputVat = 0,
   });
 
   static const zero = MonthTax(
@@ -187,7 +188,12 @@ class MonthTax {
 
   /// Invoiced amount without VAT (przychód).
   final double net;
+
+  /// Output VAT on our invoices (VAT należny).
   final double vat;
+
+  /// Input VAT on business purchases (VAT naliczony), deducted from [vat].
+  final double inputVat;
   final double pension; // emerytalne 19.52%
   final double disability; // rentowe 8%
   final double sickness; // chorobowe 2.45%
@@ -202,10 +208,14 @@ class MonthTax {
   double get gross => round2(net + vat);
   double get social => round2(pension + disability + sickness + accident);
   double get zus => round2(social + laborFund + health);
-  double get levies => round2(vat + pit + zus);
 
-  /// What stays after VAT, ryczałt and ZUS.
-  double get takeHome => round2(net - pit - zus);
+  /// VAT to pay to the tax office; negative = surplus to carry over/refund.
+  double get vatPayable => round2(vat - inputVat);
+  double get levies => round2(vatPayable + pit + zus);
+
+  /// What stays of the invoices after VAT, ryczałt and ZUS. Input VAT
+  /// counts here: the purchases themselves are planned gross as expenses.
+  double get takeHome => round2(gross - levies);
 }
 
 class TaxCalculator {
@@ -217,10 +227,12 @@ class TaxCalculator {
     required int workDays,
     required double hours,
     required double yearlyRevenue,
+    double inputVat = 0,
     bool active = true,
   }) {
     if (!active) return MonthTax.zero;
     final vat = s.vatPayer ? round2(net * s.vatRate) : 0.0;
+    final deductible = s.vatPayer ? round2(inputVat) : 0.0;
 
     double base;
     var fp = false;
@@ -257,6 +269,7 @@ class TaxCalculator {
       hours: hours,
       net: round2(net),
       vat: vat,
+      inputVat: deductible,
       pension: pension,
       disability: disability,
       sickness: sickness,

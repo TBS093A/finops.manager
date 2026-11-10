@@ -348,6 +348,7 @@ class _MonthsCard extends StatelessWidget {
                   if (o.workDays != null) 'ręcznie',
                   if (o.daysOff > 0) 'urlop ${o.daysOff}',
                   if (o.extraNet != 0) '+${zl(o.extraNet)}',
+                  if (o.inputVat != 0) 'VAT naliczony ${zl(o.inputVat)}',
                   if (o.note.isNotEmpty) o.note,
                 ].join(' · ');
                 return ListTile(
@@ -374,6 +375,7 @@ class _MonthsCard extends StatelessWidget {
       text: o.daysOff == 0 ? '' : '${o.daysOff}',
     );
     final extra = TextEditingController(text: amountText(o.extraNet));
+    final inVat = TextEditingController(text: amountText(o.inputVat));
     final note = TextEditingController(text: o.note);
     final ok = await showDialog<bool>(
       context: context,
@@ -409,6 +411,19 @@ class _MonthsCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             TextField(
+              key: const Key('month-input-vat'),
+              controller: inVat,
+              decoration: const InputDecoration(
+                labelText: 'Dodatkowy VAT naliczony',
+                helperText: 'faktury kosztowe spoza listy wydatków',
+                suffixText: 'zł',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
               controller: note,
               decoration: const InputDecoration(labelText: 'Notatka'),
             ),
@@ -430,9 +445,10 @@ class _MonthsCard extends StatelessWidget {
       workDays: int.tryParse(days.text),
       daysOff: int.tryParse(off.text) ?? 0,
       extraNet: parseAmount(extra.text) ?? 0,
+      inputVat: parseAmount(inVat.text) ?? 0,
       note: note.text.trim(),
     );
-    disposeAfterClose([days, off, extra, note]);
+    disposeAfterClose([days, off, extra, inVat, note]);
     if (ok != true) return;
     store.update((m) {
       if (value.isEmpty) {

@@ -56,6 +56,71 @@ void main() {
       expect(t.takeHome, round2(20000 - 2136 - 2757.34));
     });
 
+    test('regression: a month checked against an accountant', () {
+      // 22 days × 900 zł, full ZUS with sickness insurance, 69 zł input
+      // VAT (a 300 zł net purchase at 23%).
+      final r = const TaxCalculator(TaxSettings()).compute(
+        net: 19800,
+        workDays: 22,
+        hours: 176,
+        yearlyRevenue: 19800 * 12,
+        inputVat: 69,
+      );
+      expect(r.zus, 2757.34);
+      expect(r.pit, 2112);
+      expect(r.vat, 4554);
+      expect(r.vatPayable, 4485);
+      expect(r.levies, 9354.34);
+      // Account inflow minus everything paid to ZUS and the tax office.
+      expect(r.takeHome, 14999.66);
+
+      // The same month without sickness insurance: what the app showed
+      // before the setting was checked.
+      final noSick = const TaxCalculator(TaxSettings(sickness: false)).compute(
+        net: 19800,
+        workDays: 22,
+        hours: 176,
+        yearlyRevenue: 19800 * 12,
+      );
+      expect(noSick.zus, 2618.87);
+      expect(noSick.pit, 2128);
+    });
+
+    test('input VAT from business expenses lands in the purchase month', () {
+      final m = MemberData(
+        memberId: 'v',
+        income: const IncomeSettings(rate: 100),
+        expenses: [
+          const Expense(
+            id: 'acc',
+            name: 'księgowość',
+            amount: 369,
+            categoryId: 'firma',
+            start: YearMonth(2026, 1),
+            vatRate: 0.23,
+          ),
+          const Expense(
+            id: 'laptop',
+            name: 'laptop',
+            amount: 6150,
+            categoryId: 'firma',
+            repeat: Repeat.once,
+            start: YearMonth(2026, 12),
+            spreadMonths: 3,
+            vatRate: 0.23,
+          ),
+        ],
+        overrides: {'2026-11': const MonthOverride(inputVat: 10)},
+      );
+      final p = Planner(m, today: const YearMonth(2026, 11));
+      expect(p.inputVat(const YearMonth(2026, 11)), 69 + 10);
+      // Saved up from October, deducted only when bought in December.
+      expect(p.inputVat(const YearMonth(2026, 10)), 69);
+      expect(p.inputVat(const YearMonth(2026, 12)), 69 + 1150);
+      final dec = p.month(const YearMonth(2026, 12));
+      expect(dec.tax.vatPayable, round2(dec.tax.vat - 1219));
+    });
+
     test('health tiers', () {
       const s = TaxSettings();
       expect(s.healthFor(s.tierFor(50000)), 498.35);

@@ -97,6 +97,13 @@ class Planner {
     return sum;
   }
 
+  /// Input VAT of [ym]: business expenses on VAT invoices plus the month's
+  /// manual correction.
+  double inputVat(YearMonth ym) => round2(
+    member.expenses.fold(0.0, (a, e) => a + e.inputVatIn(ym)) +
+        member.overrideFor(ym).inputVat,
+  );
+
   double spentIn(String budgetId, YearMonth ym) => round2(
     member.spendings
         .where((s) => s.budgetId == budgetId && s.month == ym)
@@ -111,6 +118,7 @@ class Planner {
       workDays: days,
       hours: days * inc.hoursPerDay,
       yearlyRevenue: yearlyRevenue(ym.year),
+      inputVat: inputVat(ym),
       active: inc.b2b,
     );
     final lines = <PlanLine>[];
@@ -177,7 +185,9 @@ class CombinedMonth {
   double get expenses => _sum((p) => p.expenses);
   double get savings => _sum((p) => p.savings);
   double get balance => _sum((p) => p.balance);
-  double get vat => _sum((p) => p.tax.vat);
+
+  /// VAT to pay (output minus input VAT).
+  double get vat => _sum((p) => p.tax.vatPayable);
   double get pit => _sum((p) => p.tax.pit);
   double get zus => _sum((p) => p.tax.zus);
 

@@ -44,6 +44,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
   YearMonth? _end;
   int _spread = 1;
   bool _budget = false;
+  double _vatRate = 0;
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
       _end = e.end;
       _spread = e.spreadMonths;
       _budget = e.budget;
+      _vatRate = e.vatRate;
       final left = e.remainingFrom(e.start ?? YearMonth.now());
       if (left != null) _count.text = '$left';
     }
@@ -106,6 +108,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
       dayOfMonth: day != null && day >= 1 && day <= 31 ? day : null,
       spreadMonths: _kind == _Kind.once ? _spread : 1,
       budget: _kind == _Kind.monthly && _budget,
+      vatRate: _budget ? 0 : _vatRate,
       note: _note.text.trim(),
     );
     StoreScope.of(context).update((me) {
@@ -233,6 +236,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
               ),
               keyboardType: TextInputType.number,
             ),
+          if (me.tax.vatPayer && me.income.b2b && !_budget) ..._vatFields(),
           const SizedBox(height: 12),
           TextField(
             controller: _note,
@@ -242,6 +246,41 @@ class _ExpenseFormState extends State<ExpenseForm> {
         ],
       ),
     );
+  }
+
+  /// Business cost on a VAT invoice: its VAT is deducted from the VAT to pay.
+  List<Widget> _vatFields() {
+    final gross = parseAmount(_amount.text) ?? 0;
+    return [
+      SwitchListTile(
+        key: const Key('expense-vat'),
+        contentPadding: EdgeInsets.zero,
+        value: _vatRate > 0,
+        onChanged: (v) => setState(() => _vatRate = v ? 0.23 : 0),
+        title: const Text('Koszt firmowy z fakturą VAT'),
+        subtitle: const Text(
+          'Kwota brutto; VAT z faktury odejmie się od VAT do zapłaty '
+          '(w miesiącu zakupu).',
+        ),
+      ),
+      if (_vatRate > 0) ...[
+        Wrap(
+          spacing: 8,
+          children: [
+            for (final r in const [0.23, 0.08, 0.05])
+              ChoiceChip(
+                label: Text('${(r * 100).round()}%'),
+                selected: _vatRate == r,
+                onSelected: (_) => setState(() => _vatRate = r),
+              ),
+          ],
+        ),
+        Text(
+          'VAT do odliczenia: ${zl(gross * _vatRate / (1 + _vatRate))}',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    ];
   }
 
   List<Widget> _kindFields() {

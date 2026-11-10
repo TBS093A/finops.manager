@@ -524,9 +524,12 @@ class _IncomeCard extends StatelessWidget {
           if (inc.b2b) ...[
             AmountRow('Przychód netto (faktura)', t.net, sub: hoursInfo),
             AmountRow(
-              'VAT ${(m.tax.vatRate * 100).toStringAsFixed(0)}%',
-              t.vat,
-              sub: 'do zapłaty do US, faktura brutto ${zl(t.gross)}',
+              'VAT ${(m.tax.vatRate * 100).toStringAsFixed(0)}% do zapłaty',
+              t.vatPayable,
+              sub: t.inputVat > 0
+                  ? 'należny ${zl(t.vat)} − naliczony ${zl(t.inputVat)}, '
+                        'faktura brutto ${zl(t.gross)}'
+                  : 'faktura brutto ${zl(t.gross)}',
             ),
             AmountRow(
               'Ryczałt ${(m.tax.ryczaltRate * 100).toStringAsFixed(1).replaceAll('.0', '')}%',
@@ -539,7 +542,9 @@ class _IncomeCard extends StatelessWidget {
               t.zus,
               negative: true,
               sub:
-                  'społeczne ${zl(t.social)} · FP ${zl(t.laborFund)} · '
+                  'społeczne ${zl(t.social)} '
+                  '(${t.sickness > 0 ? 'z chorobowym' : 'bez chorobowego'})'
+                  ' · FP ${zl(t.laborFund)} · '
                   'zdrowotna ${zl(t.health)} (próg ${t.healthTier})',
             ),
             AmountRow('Na rękę z B2B', t.takeHome, bold: true),
@@ -549,7 +554,7 @@ class _IncomeCard extends StatelessWidget {
             AmountRow(
               'Do odłożenia na podatki',
               t.levies,
-              sub: 'VAT + ryczałt + ZUS, płatne do 20. następnego miesiąca',
+              sub: 'ZUS i ryczałt do 20., VAT do 25. następnego miesiąca',
               color: Theme.of(context).colorScheme.error,
             ),
         ],

@@ -27,11 +27,15 @@ skorygować: dni urlopu, ręczna liczba dni, dodatkowa faktura.
 
 | pozycja | wzór |
 |---|---|
-| VAT | 23% × przychód netto |
+| VAT do zapłaty | 23% × przychód netto (należny) − VAT z faktur kosztowych (naliczony) |
 | ZUS społeczne | podstawa 5652,00 zł × (19,52% + 8% + 2,45% chorobowe + 1,67% wypadkowe) = 1788,29 zł |
 | Fundusz Pracy | 2,45% × podstawa = 138,47 zł |
 | zdrowotna | 9% × 60/100/180% przeciętnego wynagrodzenia (9228,64 zł) = 498,35 / **830,58** / 1495,04 zł, próg wg prognozowanego przychodu roku |
 | ryczałt | 12% × (przychód − składki społeczne − 50% zdrowotnej), w pełnych złotych |
+
+VAT naliczony bierze się z wydatków oznaczonych jako *koszt firmowy z fakturą
+VAT* (kwota brutto, stawka 23/8/5%; zakup jednorazowy odlicza się w miesiącu
+zakupu) oraz z pola *Dodatkowy VAT naliczony* w korekcie miesiąca.
 
 Przykład: 20 dni × 8 h × 125 zł = 20 000 zł netto daje VAT 4600 zł, ZUS
 2757,34 zł i ryczałt 2136 zł, czyli 15 106,66 zł na rękę. W *Dochód →
