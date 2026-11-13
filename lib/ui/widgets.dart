@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../domain/calendar.dart';
 import 'bunny.dart';
 
-export 'bunny.dart' show Peek, BunnyAppBar, BunnyStyle;
+export 'bunny.dart' show Peek, BunnyAppBar, BunnyStyle, cueBunny;
 
 final _money = NumberFormat.currency(
   locale: 'pl_PL',
@@ -51,6 +51,11 @@ class MonthSwitcher extends StatelessWidget {
   final YearMonth month;
   final ValueChanged<YearMonth> onChanged;
 
+  void _go(YearMonth m) {
+    onChanged(m);
+    cueBunny();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -59,10 +64,10 @@ class MonthSwitcher extends StatelessWidget {
         IconButton(
           tooltip: 'Poprzedni miesiąc',
           icon: const Icon(Icons.chevron_left),
-          onPressed: () => onChanged(month.add(-1)),
+          onPressed: () => _go(month.add(-1)),
         ),
         GestureDetector(
-          onTap: () => onChanged(YearMonth.now()),
+          onTap: () => _go(YearMonth.now()),
           child: Text(
             month.label,
             // Follows the surrounding colour: white on a coloured app bar.
@@ -73,7 +78,7 @@ class MonthSwitcher extends StatelessWidget {
         IconButton(
           tooltip: 'Następny miesiąc',
           icon: const Icon(Icons.chevron_right),
-          onPressed: () => onChanged(month.add(1)),
+          onPressed: () => _go(month.add(1)),
         ),
       ],
     );

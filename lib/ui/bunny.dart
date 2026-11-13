@@ -110,18 +110,39 @@ enum Peek {
   bool get isTop => this == topLeft || this == topRight;
 }
 
-/// Height of the bunny that shows above (or below) the edge it hides behind.
-double bunnyShown(double width) => width * 1.2 * 0.84;
+/// Height of the bunny above (or below) the edge it hides behind when it
+/// leans all the way out: the whole head, the chin just behind the edge.
+double bunnyShown(double width) => width * 1.2 * 0.95;
 
-/// The bunny's head and ears, facing up. Painted into a 100 × 120 box:
-/// the bottom of the head is meant to be hidden behind something.
+/// How much shows while it hides: just the ear tips.
+double bunnyResting(double width) => width * 1.2 * 0.2;
+
+/// Bumped at the moments the bunnies should lean out and wave: a screen
+/// shows up, the month changes, something gets saved.
+final bunnyCue = ValueNotifier<int>(0);
+void cueBunny() => bunnyCue.value++;
+
+/// The bunny's head and ears, facing up, with a paw that can wave. Painted
+/// into a 100 × 120 box: the bottom of the head is meant to be hidden
+/// behind something.
 class BunnyPainter extends CustomPainter {
-  const BunnyPainter({this.eyesClosed = false, this.lookX = 0});
+  const BunnyPainter({
+    this.eyesClosed = false,
+    this.lookX = 0,
+    this.pawUp = 0,
+    this.wave = 0,
+  });
 
   final bool eyesClosed;
 
   /// -1..1: where the eyes look, left to right.
   final double lookX;
+
+  /// 0 = paw down out of sight, 1 = raised beside the head.
+  final double pawUp;
+
+  /// Paw swing in radians.
+  final double wave;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -180,11 +201,78 @@ class BunnyPainter extends CustomPainter {
     final blush = Paint()..color = const Color(0x33E8601C);
     canvas.drawCircle(const Offset(27, 94), 6, blush);
     canvas.drawCircle(const Offset(73, 94), 6, blush);
+
+    // The waving paw: comes up beside the head and swings from the wrist.
+    if (pawUp > 0) {
+      canvas.save();
+      // Pivot just right of the head, so the raised paw stands clear of it.
+      canvas.translate(97, 116);
+      canvas.rotate(0.25 + wave);
+      final paw = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(0, -48 * pawUp), width: 18, height: 26),
+        const Radius.circular(9),
+      );
+      canvas.drawRRect(paw, fill);
+      canvas.drawRRect(paw, ink..strokeWidth = 4);
+      canvas.restore();
+    }
   }
 
   @override
   bool shouldRepaint(BunnyPainter old) =>
-      old.eyesClosed != eyesClosed || old.lookX != lookX;
+      old.eyesClosed != eyesClosed ||
+      old.lookX != lookX ||
+      old.pawUp != pawUp ||
+      old.wave != wave;
+}
+
+/// One appearance of the bunny, for t in 0..1: lean out, wave, blink,
+/// glance aside, hide again.
+class BunnyPose {
+  const BunnyPose({
+    required this.out,
+    this.pawUp = 0,
+    this.wave = 0,
+    this.eyesClosed = false,
+    this.lookX = 0,
+  });
+
+  /// 0 = only the ear tips show, 1 = leaning all the way out.
+  final double out;
+  final double pawUp;
+  final double wave;
+  final bool eyesClosed;
+  final double lookX;
+
+  static const hidden = BunnyPose(out: 0);
+
+  factory BunnyPose.at(double t) {
+    if (t <= 0 || t >= 1) return hidden;
+    double span(double a, double b) => ((t - a) / (b - a)).clamp(0.0, 1.0);
+    final out = t < 0.12
+        ? Curves.easeOutBack.transform(span(0, 0.12))
+        : t < 0.86
+        ? 1.0
+        : 1 - Curves.easeInCubic.transform(span(0.86, 1));
+    final pawUp = t < 0.14
+        ? 0.0
+        : t < 0.2
+        ? Curves.easeOut.transform(span(0.14, 0.2))
+        : t < 0.58
+        ? 1.0
+        : 1 - Curves.easeIn.transform(span(0.58, 0.66));
+    // Three swings while the paw is up.
+    final wave = t >= 0.2 && t < 0.58
+        ? sin(span(0.2, 0.58) * 2 * pi * 3) * 0.45
+        : 0.0;
+    return BunnyPose(
+      out: out,
+      pawUp: pawUp,
+      wave: wave,
+      eyesClosed: t > 0.68 && t < 0.71,
+      lookX: t > 0.72 && t < 0.84 ? 1 : 0,
+    );
+  }
 }
 
 /// An [AppBar] (or any app bar) with the bunny hanging upside down below
@@ -209,68 +297,33 @@ class BunnyAppBar extends StatelessWidget implements PreferredSizeWidget {
       PeekingBunny(peek: peek, width: 34, seed: seed, child: appBar);
 }
 
-/// The bunny, blinking now and then and glancing around.
-class Bunny extends StatefulWidget {
-  const Bunny({super.key, this.width = 44, this.seed = 0});
+/// The bunny drawn in one [pose].
+class Bunny extends StatelessWidget {
+  const Bunny({super.key, this.width = 44, this.pose = BunnyPose.hidden});
   final double width;
-  final int seed;
-
-  @override
-  State<Bunny> createState() => _BunnyState();
-}
-
-class _BunnyState extends State<Bunny> {
-  late final _rnd = Random(widget.seed);
-  Timer? _timer;
-  bool _closed = false;
-  double _look = 0;
-
-  // Widget tests fail on pending timers: the bunny holds still there.
-  static final _animate = !Platform.environment.containsKey('FLUTTER_TEST');
-
-  @override
-  void initState() {
-    super.initState();
-    if (_animate) _schedule();
-  }
-
-  void _schedule() {
-    _timer = Timer(Duration(milliseconds: 2500 + _rnd.nextInt(4000)), () {
-      if (!mounted) return;
-      if (_rnd.nextInt(3) == 0) {
-        setState(() => _look = _rnd.nextInt(3) - 1.0);
-        _schedule();
-        return;
-      }
-      setState(() => _closed = true);
-      _timer = Timer(const Duration(milliseconds: 140), () {
-        if (!mounted) return;
-        setState(() => _closed = false);
-        _schedule();
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+  final BunnyPose pose;
 
   @override
   Widget build(BuildContext context) {
     return ExcludeSemantics(
       child: CustomPaint(
-        size: Size(widget.width, widget.width * 1.2),
-        painter: BunnyPainter(eyesClosed: _closed, lookX: _look),
+        size: Size(width, width * 1.2),
+        painter: BunnyPainter(
+          eyesClosed: pose.eyesClosed,
+          lookX: pose.lookX,
+          pawUp: pose.pawUp,
+          wave: pose.wave,
+        ),
       ),
     );
   }
 }
 
-/// Puts the bunny behind [child], peeking out at [peek]. With the theme
-/// off (or [Peek.none]) this is just [child].
-class PeekingBunny extends StatelessWidget {
+/// Puts the bunny behind [child], peeking out at [peek]. Most of the time
+/// only its ear tips show; when cued (see [cueBunny]), or now and then on
+/// its own, it leans out, waves and hides again. With the theme off (or
+/// [Peek.none]) this is just [child].
+class PeekingBunny extends StatefulWidget {
   const PeekingBunny({
     super.key,
     required this.child,
@@ -286,32 +339,109 @@ class PeekingBunny extends StatelessWidget {
 
   /// Distance from the corner along the edge.
   final double inset;
+
+  /// Varies the bunnies on one screen: who comes out first, when each one
+  /// shows up on its own.
   final int seed;
 
   @override
+  State<PeekingBunny> createState() => _PeekingBunnyState();
+}
+
+class _PeekingBunnyState extends State<PeekingBunny>
+    with SingleTickerProviderStateMixin {
+  static const _show = Duration(milliseconds: 3600);
+
+  // Widget tests fail on pending timers: no unprompted visits there.
+  static final _idle = !Platform.environment.containsKey('FLUTTER_TEST');
+
+  late final _rnd = Random(widget.seed);
+
+  /// Bunnies on one screen come out one after another, not all at once.
+  late final int _delayMs = (widget.seed.abs() % 4) * 300;
+  late final _ctrl = AnimationController(
+    vsync: this,
+    duration: _show + Duration(milliseconds: _delayMs),
+  );
+  Timer? _visit;
+
+  @override
+  void initState() {
+    super.initState();
+    bunnyCue.addListener(_onCue);
+    // Say hello when the screen first shows up.
+    _onCue();
+    _scheduleVisit();
+  }
+
+  @override
+  void dispose() {
+    bunnyCue.removeListener(_onCue);
+    _visit?.cancel();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  // The cue often comes with a rebuild (new tab, new month): check after
+  // the frame whether this bunny is on screen at all.
+  void _onCue() => WidgetsBinding.instance.addPostFrameCallback((_) => _play());
+
+  void _play() {
+    if (!mounted || _ctrl.isAnimating) return;
+    if (!BunnyStyle.of(context) || !TickerMode.valuesOf(context).enabled) {
+      return;
+    }
+    _ctrl.forward(from: 0);
+  }
+
+  void _scheduleVisit() {
+    if (!_idle) return;
+    _visit = Timer(Duration(seconds: 25 + _rnd.nextInt(35)), () {
+      _play();
+      _scheduleVisit();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (peek == Peek.none || !BunnyStyle.of(context)) return child;
-    // Ears and eyes show, the chin stays behind the edge.
-    final shown = bunnyShown(width);
-    final bunny = Bunny(width: width, seed: seed);
+    final w = widget;
+    if (w.peek == Peek.none || !BunnyStyle.of(context)) return w.child;
+    final full = bunnyShown(w.width);
+    final travel = full - bunnyResting(w.width);
+    final total = _ctrl.duration!.inMilliseconds;
+    final bunny = AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
+        final t = (_ctrl.value * total - _delayMs) / _show.inMilliseconds;
+        final pose = BunnyPose.at(t);
+        // Slides back towards its chin (inside the rotation for the
+        // upside-down ones); the bar or card in front hides whatever has
+        // not come out yet.
+        final dy = (1 - pose.out) * travel;
+        return Transform.translate(
+          offset: Offset(0, dy),
+          child: Bunny(width: w.width, pose: pose),
+        );
+      },
+    );
     final upsideDown = RotatedBox(quarterTurns: 2, child: bunny);
-    final Widget positioned = switch (peek) {
-      Peek.topRight => Positioned(top: -shown, right: inset, child: bunny),
-      Peek.topLeft => Positioned(top: -shown, left: inset, child: bunny),
+    final Widget positioned = switch (w.peek) {
+      Peek.topRight => Positioned(top: -full, right: w.inset, child: bunny),
+      Peek.topLeft => Positioned(top: -full, left: w.inset, child: bunny),
       Peek.bottomRight => Positioned(
-        bottom: -shown,
-        right: inset,
+        bottom: -full,
+        right: w.inset,
         child: upsideDown,
       ),
       Peek.bottomLeft => Positioned(
-        bottom: -shown,
-        left: inset,
+        bottom: -full,
+        left: w.inset,
         child: upsideDown,
       ),
       Peek.none => const SizedBox.shrink(),
     };
-    // The bunny is painted first, so [child] covers its chin; the part that
-    // sticks out past the edge stays visible.
-    return Stack(clipBehavior: Clip.none, children: [positioned, child]);
+    // The bunny is painted first, so [child] covers what is still behind
+    // the edge.
+    return Stack(clipBehavior: Clip.none, children: [positioned, w.child]);
   }
 }

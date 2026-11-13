@@ -240,5 +240,6 @@ class _LogScreenState extends State<LogScreen> {
         me.spendings.add(s);
       }
     });
+    cueBunny();
   }
 }

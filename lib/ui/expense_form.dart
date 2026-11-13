@@ -120,6 +120,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
       }
     });
     Navigator.of(context).pop();
+    cueBunny();
   }
 
   void _delete() {

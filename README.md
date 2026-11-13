@@ -15,8 +15,11 @@ Dołączenie do wspólnego planu odbywa się przez zeskanowanie kodu QR.
 | ![Plan](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/02_plan.png) | ![Prognoza](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/03_plan_charts.png) | ![Wydatki](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/05_expenses.png) | ![Dochód](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/07_income.png) | ![QR](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/09_invite_qr.png) | ![Króliczek](https://raw.githubusercontent.com/TBS093A/finops.manager/screenshots/10_bunny.png) |
 
 Opcjonalny **motyw z króliczkiem** (Dochód → Wygląd): płaskie kolory jak z
-książeczki i biały króliczek zaglądający zza pasków i kart. Króliczek jest
-autorską grafiką rysowaną w kodzie, bez plików graficznych.
+książeczki i biały króliczek schowany za paskami i kartami (widać czubki
+uszu). Wychyla się, macha łapką i znów chowa, gdy otwierasz zakładkę,
+zmieniasz miesiąc albo zapisujesz wydatek lub zakup, a czasem też sam z
+siebie. Króliczek jest autorską grafiką rysowaną w kodzie, bez plików
+graficznych.
 
 Screenshoty robi CI na emulatorze (`integration_test/app_test.dart`).
 

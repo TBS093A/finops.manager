@@ -89,14 +89,10 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     // Bunny theme: the bunny stands in the "grass" of the bottom bar, on the
-    // left so it never hides the + buttons, in a strip of its own so it
-    // never covers content either.
-    final room = BunnyStyle.of(context) ? bunnyShown(_navBunny) : 0.0;
+    // left so it never hides the + buttons. Content scrolls right up to the
+    // bar: the bunny hides behind it, only its ear tips show between visits.
     return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.only(bottom: room),
-        child: IndexedStack(index: _tab, children: _pages),
-      ),
+      body: IndexedStack(index: _tab, children: _pages),
       bottomNavigationBar: PeekingBunny(
         peek: Peek.topLeft,
         width: _navBunny,
@@ -104,7 +100,10 @@ class _HomeShellState extends State<HomeShell> {
         seed: 7,
         child: NavigationBar(
           selectedIndex: _tab,
-          onDestinationSelected: (i) => setState(() => _tab = i),
+          onDestinationSelected: (i) {
+            setState(() => _tab = i);
+            cueBunny();
+          },
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.insights_outlined),
