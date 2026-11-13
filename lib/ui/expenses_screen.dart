@@ -17,7 +17,7 @@ class ExpensesScreen extends StatefulWidget {
 }
 
 class _ExpensesScreenState extends State<ExpensesScreen> {
-  YearMonth _month = YearMonth.now();
+  YearMonth get _month => StoreScope.read(context).month;
 
   void _open({Expense? e, bool wish = false}) => Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -87,7 +87,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         Center(
           child: MonthSwitcher(
             month: _month,
-            onChanged: (m) => setState(() => _month = m),
+            onChanged: (m) => StoreScope.read(context).setMonth(m),
           ),
         ),
         Padding(

@@ -17,7 +17,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  YearMonth _month = YearMonth.now();
+  YearMonth get _month => StoreScope.read(context).month;
   static const _horizon = 12;
 
   @override
@@ -32,7 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: MonthSwitcher(
           month: _month,
-          onChanged: (m) => setState(() => _month = m),
+          onChanged: (m) => StoreScope.read(context).setMonth(m),
         ),
         centerTitle: true,
       ),

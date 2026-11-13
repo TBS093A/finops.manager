@@ -15,6 +15,10 @@ class StoreScope extends InheritedNotifier<Store> {
 
   static Store of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<StoreScope>()!.notifier!;
+
+  /// Without subscribing to changes: for event handlers.
+  static Store read(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<StoreScope>()!.notifier!;
 }
 
 class FinOpsApp extends StatelessWidget {

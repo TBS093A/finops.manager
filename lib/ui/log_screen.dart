@@ -16,7 +16,7 @@ class LogScreen extends StatefulWidget {
 }
 
 class _LogScreenState extends State<LogScreen> {
-  YearMonth _month = YearMonth.now();
+  YearMonth get _month => StoreScope.read(context).month;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class _LogScreenState extends State<LogScreen> {
       appBar: AppBar(
         title: MonthSwitcher(
           month: _month,
-          onChanged: (m) => setState(() => _month = m),
+          onChanged: (m) => StoreScope.read(context).setMonth(m),
         ),
         centerTitle: true,
       ),

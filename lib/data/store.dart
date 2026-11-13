@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../domain/calendar.dart';
 import '../domain/models.dart';
 import '../sync/household_sync.dart';
 import '../sync/invite.dart';
@@ -46,6 +47,16 @@ class Store extends ChangeNotifier {
 
   /// Member ids shown together on the dashboard (me included by default).
   final Set<String> selected = {};
+
+  /// The month every month switcher shows (Plan, Wydatki, Dziennik): moving
+  /// it on one screen moves it on all of them.
+  YearMonth month = YearMonth.now();
+
+  void setMonth(YearMonth m) {
+    if (m == month) return;
+    month = m;
+    notifyListeners();
+  }
 
   HouseholdSecrets? secrets;
   HouseholdSync? sync;

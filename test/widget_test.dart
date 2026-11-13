@@ -98,6 +98,50 @@ void main() {
     expect(find.text('Nowy wydatek'), findsOneWidget);
   });
 
+  testWidgets('Plan, Wydatki and Dziennik share the selected month', (t) async {
+    final store = await pumpApp(
+      t,
+      me: MemberData(
+        memberId: 'me',
+        name: 'A',
+        expenses: [
+          Expense(
+            id: 'food',
+            name: 'jedzenie',
+            amount: 2000,
+            categoryId: 'codzienne',
+            start: YearMonth.now(),
+            budget: true,
+          ),
+        ],
+      ),
+    );
+    Finder nav(String s) =>
+        find.descendant(of: find.byType(NavigationBar), matching: find.text(s));
+    final now = YearMonth.now();
+
+    // Forward twice on Plan.
+    await t.tap(find.byTooltip('Następny miesiąc'));
+    await t.pumpAndSettle();
+    await t.tap(find.byTooltip('Następny miesiąc'));
+    await t.pumpAndSettle();
+    expect(store.month, now.add(2));
+
+    await t.tap(nav('Wydatki'));
+    await t.pumpAndSettle();
+    expect(find.text(now.add(2).label), findsOneWidget);
+
+    // Back once on Wydatki: Dziennik and Plan follow.
+    await t.tap(find.byTooltip('Poprzedni miesiąc'));
+    await t.pumpAndSettle();
+    await t.tap(nav('Dziennik'));
+    await t.pumpAndSettle();
+    expect(find.text(now.add(1).label), findsOneWidget);
+    await t.tap(nav('Plan'));
+    await t.pumpAndSettle();
+    expect(find.text(now.add(1).label), findsOneWidget);
+  });
+
   testWidgets('income and household screens render', (t) async {
     await pumpApp(
       t,
