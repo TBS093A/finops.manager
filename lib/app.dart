@@ -88,7 +88,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    // Bunny theme: the bunny stands in the "grass" of the bottom bar, on the
+    // Bunny theme: the bunny stands behind the bottom bar, on the
     // left so it never hides the + buttons. Content scrolls right up to the
     // bar: the bunny hides behind it, only its ear tips show between visits.
     return Scaffold(
@@ -96,6 +96,7 @@ class _HomeShellState extends State<HomeShell> {
       bottomNavigationBar: PeekingBunny(
         peek: Peek.topLeft,
         width: _navBunny,
+        earsWhileHidden: false,
         inset: 18,
         seed: 7,
         child: NavigationBar(

@@ -4,8 +4,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-/// Optional "bunny" look: a flat, bold-outlined palette (sky blue, grass
-/// green, orange) and an original white bunny that peeks out from behind
+/// Optional "bunny" look: a flat, bold-outlined palette (pink bars, purple
+/// accents) and an original white bunny that peeks out from behind
 /// bars and card borders. Drawn in code, no image assets.
 class BunnyStyle extends ThemeExtension<BunnyStyle> {
   const BunnyStyle({this.enabled = false});
@@ -23,17 +23,19 @@ class BunnyStyle extends ThemeExtension<BunnyStyle> {
       t < 0.5 ? this : (other ?? this);
 }
 
-const bunnySky = Color(0xFF1F4E96);
-const bunnyGrass = Color(0xFF4A7A2C);
-const bunnyOrange = Color(0xFFE8601C);
+/// Top and bottom bars.
+const bunnyBar = Color(0xFFCC4080);
+
+/// Buttons, switches, the selected tab.
+const bunnyAccent = Color(0xFF7E3FB8);
 const bunnyInk = Color(0xFF111111);
 
 ThemeData bunnyTheme() {
   final scheme = ColorScheme.fromSeed(
-    seedColor: bunnyOrange,
-    primary: bunnyOrange,
-    secondary: bunnySky,
-    tertiary: bunnyGrass,
+    seedColor: bunnyAccent,
+    primary: bunnyAccent,
+    secondary: bunnyBar,
+    tertiary: bunnyAccent,
     surface: const Color(0xFFFFFBF5),
   );
   const outline = BorderSide(color: bunnyInk, width: 2);
@@ -43,13 +45,13 @@ ThemeData bunnyTheme() {
     scaffoldBackgroundColor: const Color(0xFFF4EFE6),
     extensions: const [BunnyStyle(enabled: true)],
     appBarTheme: const AppBarTheme(
-      backgroundColor: bunnySky,
+      backgroundColor: bunnyBar,
       foregroundColor: Colors.white,
       shape: Border(bottom: BorderSide(color: bunnyInk, width: 3)),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: bunnyGrass,
-      indicatorColor: bunnyOrange,
+      backgroundColor: bunnyBar,
+      indicatorColor: bunnyAccent,
       iconTheme: WidgetStateProperty.resolveWith(
         (s) => IconThemeData(
           color: s.contains(WidgetState.selected)
@@ -69,7 +71,7 @@ ThemeData bunnyTheme() {
     tabBarTheme: const TabBarThemeData(
       labelColor: Colors.white,
       unselectedLabelColor: Colors.white70,
-      indicatorColor: bunnyOrange,
+      indicatorColor: bunnyAccent,
     ),
     cardTheme: CardThemeData(
       color: Colors.white,
@@ -80,7 +82,7 @@ ThemeData bunnyTheme() {
       ),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: bunnyOrange,
+      backgroundColor: bunnyAccent,
       foregroundColor: Colors.white,
       elevation: 0,
       focusElevation: 0,
@@ -198,7 +200,7 @@ class BunnyPainter extends CustomPainter {
       Rect.fromCenter(center: const Offset(50, 93), width: 7, height: 5),
       Paint()..color = const Color(0xFFE88A8A),
     );
-    final blush = Paint()..color = const Color(0x33E8601C);
+    final blush = Paint()..color = const Color(0x40F06292);
     canvas.drawCircle(const Offset(27, 94), 6, blush);
     canvas.drawCircle(const Offset(73, 94), 6, blush);
 
@@ -331,6 +333,7 @@ class PeekingBunny extends StatefulWidget {
     this.width = 40,
     this.inset = 24,
     this.seed = 0,
+    this.earsWhileHidden = true,
   });
 
   final Widget child;
@@ -343,6 +346,10 @@ class PeekingBunny extends StatefulWidget {
   /// Varies the bunnies on one screen: who comes out first, when each one
   /// shows up on its own.
   final int seed;
+
+  /// Whether the ear tips stay visible between visits. Off where they would
+  /// poke into content (the bottom bar, with content scrolling up to it).
+  final bool earsWhileHidden;
 
   @override
   State<PeekingBunny> createState() => _PeekingBunnyState();
@@ -407,7 +414,7 @@ class _PeekingBunnyState extends State<PeekingBunny>
     final w = widget;
     if (w.peek == Peek.none || !BunnyStyle.of(context)) return w.child;
     final full = bunnyShown(w.width);
-    final travel = full - bunnyResting(w.width);
+    final travel = full - (w.earsWhileHidden ? bunnyResting(w.width) : -2);
     final total = _ctrl.duration!.inMilliseconds;
     final bunny = AnimatedBuilder(
       animation: _ctrl,
