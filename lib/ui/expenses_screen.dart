@@ -32,25 +32,28 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       length: 3,
       child: Builder(
         builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Wydatki'),
-            actions: [
-              IconButton(
-                tooltip: 'Kategorie',
-                icon: const Icon(Icons.category_outlined),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const CategoriesScreen(),
+          appBar: BunnyAppBar(
+            seed: 2,
+            appBar: AppBar(
+              title: const Text('Wydatki'),
+              actions: [
+                IconButton(
+                  tooltip: 'Kategorie',
+                  icon: const Icon(Icons.category_outlined),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const CategoriesScreen(),
+                    ),
                   ),
                 ),
-              ),
-            ],
-            bottom: const TabBar(
-              tabs: [
-                Tab(text: 'Miesiąc'),
-                Tab(text: 'Wszystkie'),
-                Tab(text: 'Lista życzeń'),
               ],
+              bottom: const TabBar(
+                tabs: [
+                  Tab(text: 'Miesiąc'),
+                  Tab(text: 'Wszystkie'),
+                  Tab(text: 'Lista życzeń'),
+                ],
+              ),
             ),
           ),
           floatingActionButton: FloatingActionButton(

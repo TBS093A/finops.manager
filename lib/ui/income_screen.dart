@@ -29,6 +29,22 @@ class IncomeScreen extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 24),
         children: [
           SectionCard(
+            peek: Peek.topRight,
+            seed: 4,
+            title: 'Wygląd',
+            child: SwitchListTile(
+              key: const Key('bunny-theme'),
+              contentPadding: EdgeInsets.zero,
+              value: store.bunny,
+              onChanged: store.setBunny,
+              title: const Text('Motyw z króliczkiem'),
+              subtitle: const Text(
+                'Płaskie kolory jak z książeczki i króliczek zaglądający '
+                'zza pasków i kart. Tylko na tym telefonie.',
+              ),
+            ),
+          ),
+          SectionCard(
             title: 'Uczestnik',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -90,6 +90,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _summary(CombinedMonth c, double endBalance, bool joint) {
     final scheme = Theme.of(context).colorScheme;
     return SectionCard(
+      peek: Peek.topRight,
+      seed: 1,
       title: joint ? 'Wspólny bilans' : 'Bilans miesiąca',
       child: Column(
         children: [
@@ -273,6 +275,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
     final minBal = balances.reduce((a, b) => a < b ? a : b);
     return SectionCard(
+      peek: Peek.topLeft,
+      seed: 3,
       title: 'Prognoza 12 miesięcy',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

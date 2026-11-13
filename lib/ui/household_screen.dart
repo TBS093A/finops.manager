@@ -114,9 +114,13 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
     final store = StoreScope.of(context);
     final s = store.secrets;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(s?.name ?? 'Wspólne planowanie'),
-        actions: const [_NodeStatus()],
+      appBar: BunnyAppBar(
+        peek: Peek.bottomLeft,
+        seed: 5,
+        appBar: AppBar(
+          title: Text(s?.name ?? 'Wspólne planowanie'),
+          actions: const [_NodeStatus()],
+        ),
       ),
       body: s == null ? _noHousehold(store) : _household(store, s),
     );

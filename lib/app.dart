@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'data/store.dart';
+import 'ui/bunny.dart';
 import 'ui/dashboard_screen.dart';
 import 'ui/expenses_screen.dart';
 import 'ui/household_screen.dart';
@@ -40,12 +41,16 @@ class FinOpsApp extends StatelessWidget {
     );
     return StoreScope(
       store: store,
-      child: MaterialApp(
-        title: 'FinOps Manager',
-        debugShowCheckedModeBanner: false,
-        theme: theme(Brightness.light),
-        darkTheme: theme(Brightness.dark),
-        home: const _Root(),
+      child: ListenableBuilder(
+        listenable: store,
+        builder: (context, _) => MaterialApp(
+          title: 'FinOps Manager',
+          debugShowCheckedModeBanner: false,
+          // The bunny theme is a light, flat picture-book look.
+          theme: store.bunny ? bunnyTheme() : theme(Brightness.light),
+          darkTheme: store.bunny ? bunnyTheme() : theme(Brightness.dark),
+          home: const _Root(),
+        ),
       ),
     );
   }
@@ -79,40 +84,55 @@ class _HomeShellState extends State<HomeShell> {
     HouseholdScreen(),
   ];
 
+  static const _navBunny = 40.0;
+
   @override
   Widget build(BuildContext context) {
+    // Bunny theme: the bunny stands in the "grass" of the bottom bar, on the
+    // left so it never hides the + buttons, in a strip of its own so it
+    // never covers content either.
+    final room = BunnyStyle.of(context) ? bunnyShown(_navBunny) : 0.0;
     return Scaffold(
-      body: IndexedStack(index: _tab, children: _pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
-            label: 'Plan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.event_note_outlined),
-            selectedIcon: Icon(Icons.event_note),
-            label: 'Wydatki',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Dziennik',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.work_outline),
-            selectedIcon: Icon(Icons.work),
-            label: 'Dochód',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            selectedIcon: Icon(Icons.group),
-            label: 'Wspólne',
-          ),
-        ],
+      body: Padding(
+        padding: EdgeInsets.only(bottom: room),
+        child: IndexedStack(index: _tab, children: _pages),
+      ),
+      bottomNavigationBar: PeekingBunny(
+        peek: Peek.topLeft,
+        width: _navBunny,
+        inset: 18,
+        seed: 7,
+        child: NavigationBar(
+          selectedIndex: _tab,
+          onDestinationSelected: (i) => setState(() => _tab = i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.insights_outlined),
+              selectedIcon: Icon(Icons.insights),
+              label: 'Plan',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.event_note_outlined),
+              selectedIcon: Icon(Icons.event_note),
+              label: 'Wydatki',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: Icon(Icons.receipt_long),
+              label: 'Dziennik',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.work_outline),
+              selectedIcon: Icon(Icons.work),
+              label: 'Dochód',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.group_outlined),
+              selectedIcon: Icon(Icons.group),
+              label: 'Wspólne',
+            ),
+          ],
+        ),
       ),
     );
   }

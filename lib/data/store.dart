@@ -52,6 +52,15 @@ class Store extends ChangeNotifier {
   /// it on one screen moves it on all of them.
   YearMonth month = YearMonth.now();
 
+  /// The bunny theme. This phone only: not part of the synced data.
+  bool bunny = false;
+
+  void setBunny(bool on) {
+    bunny = on;
+    unawaited(_write('prefs.json', {'bunny': on}));
+    notifyListeners();
+  }
+
   void setMonth(YearMonth m) {
     if (m == month) return;
     month = m;
@@ -96,6 +105,11 @@ class Store extends ChangeNotifier {
       );
     }
     if (selected.isEmpty) selected.add(me.memberId);
+    final prefs = _file('prefs.json');
+    if (await prefs.exists()) {
+      final j = jsonDecode(await prefs.readAsString()) as Map<String, dynamic>;
+      bunny = j['bunny'] as bool? ?? false;
+    }
   }
 
   Future<void> _write(String name, Object json) async {

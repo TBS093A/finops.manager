@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../domain/calendar.dart';
+import 'bunny.dart';
+
+export 'bunny.dart' show Peek, BunnyAppBar, BunnyStyle;
 
 final _money = NumberFormat.currency(
   locale: 'pl_PL',
@@ -62,7 +65,9 @@ class MonthSwitcher extends StatelessWidget {
           onTap: () => onChanged(YearMonth.now()),
           child: Text(
             month.label,
-            style: Theme.of(context).textTheme.titleMedium,
+            // Follows the surrounding colour: white on a coloured app bar.
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(color: DefaultTextStyle.of(context).style.color),
           ),
         ),
         IconButton(
@@ -128,16 +133,42 @@ class SectionCard extends StatelessWidget {
     required this.title,
     required this.child,
     this.trailing,
+    this.peek = Peek.none,
+    this.seed = 0,
   });
 
   final String title;
   final Widget child;
   final Widget? trailing;
 
+  /// Bunny theme: the bunny peeks over this card's top edge.
+  final Peek peek;
+  final int seed;
+
+  static const _bunnyWidth = 40.0;
+
   @override
   Widget build(BuildContext context) {
+    // Room above the card for the bunny's ears, so it never sits on the
+    // card before.
+    final room = BunnyStyle.of(context) && peek.isTop
+        ? bunnyShown(_bunnyWidth)
+        : 0.0;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12, 6 + room, 12, 6),
+      child: PeekingBunny(
+        peek: peek,
+        width: _bunnyWidth,
+        inset: 28,
+        seed: seed,
+        child: _card(context),
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Column(

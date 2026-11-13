@@ -91,6 +91,8 @@ class _LogScreenState extends State<LogScreen> {
     final weekly = b.amount * 7 / _month.daysInMonth;
     final left = b.amount - spent;
     return SectionCard(
+      peek: Peek.topRight,
+      seed: b.id.hashCode,
       title: b.name,
       trailing: Text('${zl(spent)} / ${zl(b.amount)}'),
       child: Column(

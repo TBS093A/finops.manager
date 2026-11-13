@@ -122,5 +122,16 @@ void main() {
     await t.tap(find.text('Zaproś uczestnika'));
     await settle(t);
     await binding.takeScreenshot('09_invite_qr');
+
+    // The optional bunny theme.
+    await t.tap(find.byType(BackButton));
+    await settle(t);
+    await t.tap(nav('Dochód'));
+    await settle(t);
+    await t.tap(find.byKey(const Key('bunny-theme')));
+    await settle(t);
+    await t.tap(nav('Plan'));
+    await settle(t);
+    await binding.takeScreenshot('10_bunny');
   });
 }

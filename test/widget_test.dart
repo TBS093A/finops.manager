@@ -2,6 +2,7 @@ import 'package:finops_manager/app.dart';
 import 'package:finops_manager/data/store.dart';
 import 'package:finops_manager/domain/calendar.dart';
 import 'package:finops_manager/domain/models.dart';
+import 'package:finops_manager/ui/bunny.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -140,6 +141,28 @@ void main() {
     await t.tap(nav('Plan'));
     await t.pumpAndSettle();
     expect(find.text(now.add(1).label), findsOneWidget);
+  });
+
+  testWidgets('bunny theme turns on and off', (t) async {
+    final store = await pumpApp(
+      t,
+      me: MemberData(memberId: 'me', name: 'A'),
+    );
+    expect(find.byType(Bunny, skipOffstage: false), findsNothing);
+    await t.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Dochód'),
+      ),
+    );
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('bunny-theme')));
+    await t.pumpAndSettle();
+    expect(store.bunny, isTrue);
+    expect(find.byType(Bunny), findsWidgets);
+    await t.tap(find.byKey(const Key('bunny-theme')));
+    await t.pumpAndSettle();
+    expect(find.byType(Bunny, skipOffstage: false), findsNothing);
   });
 
   testWidgets('income and household screens render', (t) async {
